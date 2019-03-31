@@ -32,22 +32,63 @@ const CREATE_ITEM_MUTATION = gql`
 
 class CreateItem extends Component {
   state = {
-    title: 'Cool Shoes',
-    description: 'I love those shoes',
-    image: 'dog.jpg',
-    largeImage: 'large-dog.jpg',
-    price: 1000,
+    data: {
+      title: '',
+      description: '',
+      image: '',
+      largeImage: '',
+      price: 0,
+    },
+    uploadLoading: false,
   };
 
   handleChange = e => {
     const { name, type, value } = e.target;
     const val = type === 'number' ? parseFloat(value || 0) : value;
-    this.setState({ [name]: val });
+    this.setState(prevState => ({ data: { ...prevState.data, [name]: val } }));
+  };
+
+  uploadFile = async e => {
+    const { files } = e.target;
+    if (files.length) {
+      const data = new FormData();
+      data.append('file', files[0]);
+      data.append('upload_preset', 'sick-fits');
+
+      this.setState({ uploadLoading: true });
+
+      const res = await fetch(
+        'https://api.cloudinary.com/v1_1/johanquiroga/image/upload',
+        {
+          method: 'POST',
+          body: data,
+        }
+      );
+
+      const file = await res.json();
+      this.setState(prevState => ({
+        data: {
+          ...prevState.data,
+          image: file.secure_url,
+          largeImage: file.eager[0].secure_url,
+        },
+        uploadLoading: false,
+      }));
+    } else {
+      this.setState(prevState => ({
+        data: {
+          ...prevState.data,
+          image: '',
+          largeImage: '',
+        },
+      }));
+    }
   };
 
   render() {
+    const { data, uploadLoading } = this.state;
     return (
-      <Mutation mutation={CREATE_ITEM_MUTATION} variables={this.state}>
+      <Mutation mutation={CREATE_ITEM_MUTATION} variables={data}>
         {(createItem, { loading, error }) => (
           <Form
             onSubmit={async e => {
@@ -63,7 +104,24 @@ class CreateItem extends Component {
             }}
           >
             <ErrorMessage error={error} />
-            <fieldset disabled={loading} aria-busy={loading}>
+            <fieldset
+              disabled={uploadLoading || loading}
+              aria-busy={uploadLoading || loading}
+            >
+              <label htmlFor="file">
+                Image
+                <input
+                  type="file"
+                  id="file"
+                  name="file"
+                  placeholder="Upload an image"
+                  required
+                  onChange={this.uploadFile}
+                />
+                {data.image && (
+                  <img width="200" src={data.image} alt="Upload preview" />
+                )}
+              </label>
               <label htmlFor="title">
                 Title
                 <input
@@ -72,7 +130,7 @@ class CreateItem extends Component {
                   name="title"
                   placeholder="Title"
                   required
-                  value={this.state.title}
+                  value={data.title}
                   onChange={this.handleChange}
                 />
               </label>
@@ -84,7 +142,7 @@ class CreateItem extends Component {
                   name="price"
                   placeholder="Price"
                   required
-                  value={this.state.price}
+                  value={data.price}
                   onChange={this.handleChange}
                 />
               </label>
@@ -95,7 +153,7 @@ class CreateItem extends Component {
                   name="description"
                   placeholder="Enter a Description"
                   required
-                  value={this.state.description}
+                  value={data.description}
                   onChange={this.handleChange}
                 />
               </label>
