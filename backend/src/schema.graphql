@@ -8,10 +8,21 @@ input CreateItemInput {
   price: Int!
 }
 
+input UpdateItemInput {
+  id: ID!
+  title: String
+  description: String
+  image: String
+  largeImage: String
+  price: Int
+}
+
 type Mutation {
   createItem(data: CreateItemInput!): Item!
+  updateItem(data: UpdateItemInput!): Item!
 }
 
 type Query {
   items: [Item]!
+  item(where: ItemWhereUniqueInput!): Item
 }
