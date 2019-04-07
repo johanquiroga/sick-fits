@@ -20,6 +20,7 @@ input UpdateItemInput {
 type Mutation {
   createItem(data: CreateItemInput!): Item!
   updateItem(data: UpdateItemInput!): Item!
+  deleteItem(where: ItemWhereUniqueInput!): Item!
 }
 
 type Query {
