@@ -1,12 +1,10 @@
 import React, { Component } from 'react';
 import { Query, Mutation } from 'react-apollo';
 import gql from 'graphql-tag';
-import Router from 'next/router';
+import { adopt } from 'react-adopt';
 
 import Form from './styles/Form';
 import ErrorMessage from './ErrorMessage';
-
-import formatMoney from '../lib/formatMoney';
 
 const SINGLE_ITEM_QUERY = gql`
   query SINGLE_ITEM_QUERY($id: ID!) {
@@ -50,6 +48,21 @@ const UPDATE_ITEM_MUTATION = gql`
   }
 `;
 
+/* eslint-disable react/display-name,react/prop-types */
+const Composed = adopt({
+  singleItem: ({ singleItemVariables, render }) => (
+    <Query query={SINGLE_ITEM_QUERY} variables={singleItemVariables}>
+      {render}
+    </Query>
+  ),
+  updateItem: ({ render }) => (
+    <Mutation mutation={UPDATE_ITEM_MUTATION}>
+      {(mutation, result) => render({ mutation, result })}
+    </Mutation>
+  ),
+});
+/* eslint-enable react/display-name,react/prop-types */
+
 class UpdateItem extends Component {
   state = {
     data: {},
@@ -69,67 +82,68 @@ class UpdateItem extends Component {
     });
   };
 
+  // {({ data: singleItem.data, loading: dbLoading }) => {
   render() {
     const { uploadLoading } = this.state;
     return (
-      <Query query={SINGLE_ITEM_QUERY} variables={{ id: this.props.id }}>
-        {({ data: dbData, loading: dbLoading }) => {
-          if (dbLoading) return <p>Loading...</p>;
-          if (!dbData.item) return <p>No Item Found for ID {this.props.id}</p>;
+      <Composed singleItemVariables={{ id: this.props.id }}>
+        {({
+          singleItem,
+          updateItem: { mutation: updateItem, result: updateResult },
+        }) => {
+          if (singleItem.loading) return <p>Loading...</p>;
+          if (!singleItem.data.item)
+            return <p>No Item Found for ID {this.props.id}</p>;
           return (
-            <Mutation mutation={UPDATE_ITEM_MUTATION}>
-              {(updateItem, { loading, error }) => (
-                <Form onSubmit={e => this.updateItem(e, updateItem)}>
-                  <ErrorMessage error={error} />
-                  <fieldset
-                    disabled={uploadLoading || loading}
-                    aria-busy={uploadLoading || loading}
-                  >
-                    <label htmlFor="title">
-                      Title
-                      <input
-                        type="text"
-                        id="title"
-                        name="title"
-                        placeholder="Title"
-                        required
-                        defaultValue={dbData.item.title}
-                        onChange={this.handleChange}
-                      />
-                    </label>
-                    <label htmlFor="price">
-                      Price
-                      <input
-                        type="number"
-                        id="price"
-                        name="price"
-                        placeholder="Price"
-                        required
-                        defaultValue={dbData.item.price}
-                        onChange={this.handleChange}
-                      />
-                    </label>
-                    <label htmlFor="description">
-                      Description
-                      <textarea
-                        id="description"
-                        name="description"
-                        placeholder="Enter a Description"
-                        required
-                        defaultValue={dbData.item.description}
-                        onChange={this.handleChange}
-                      />
-                    </label>
-                    <button type="submit">
-                      Sav{loading ? 'ing' : 'e'} Changes
-                    </button>
-                  </fieldset>
-                </Form>
-              )}
-            </Mutation>
+            <Form onSubmit={e => this.updateItem(e, updateItem)}>
+              <ErrorMessage error={updateResult.error} />
+              <fieldset
+                disabled={uploadLoading || updateResult.loading}
+                aria-busy={uploadLoading || updateResult.loading}
+              >
+                <label htmlFor="title">
+                  Title
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    placeholder="Title"
+                    required
+                    defaultValue={singleItem.data.item.title}
+                    onChange={this.handleChange}
+                  />
+                </label>
+                <label htmlFor="price">
+                  Price
+                  <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    placeholder="Price"
+                    required
+                    defaultValue={singleItem.data.item.price}
+                    onChange={this.handleChange}
+                  />
+                </label>
+                <label htmlFor="description">
+                  Description
+                  <textarea
+                    id="description"
+                    name="description"
+                    placeholder="Enter a Description"
+                    required
+                    defaultValue={singleItem.data.item.description}
+                    onChange={this.handleChange}
+                  />
+                </label>
+                <button type="submit">
+                  Sav{updateResult.loading ? 'ing' : 'e'} Changes
+                </button>
+              </fieldset>
+            </Form>
           );
         }}
-      </Query>
+      </Composed>
     );
   }
 }
