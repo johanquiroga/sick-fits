@@ -5,6 +5,7 @@ import { adopt } from 'react-adopt';
 
 import User from './User';
 import CartItem from './CartItem';
+import TakeMyMoney from './TakeMyMoney';
 
 import CartStyles from './styles/CartStyles';
 import Supreme from './styles/Supreme';
@@ -60,7 +61,11 @@ const Cart = () => (
           </ul>
           <footer>
             <p>{formatMoney(calcTotalPrice(me.cart))}</p>
-            <SickButton>Checkout</SickButton>
+            {me.cart.length ? (
+              <TakeMyMoney>
+                <SickButton>Checkout</SickButton>
+              </TakeMyMoney>
+            ) : null}
           </footer>
         </CartStyles>
       );
