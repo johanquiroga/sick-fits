@@ -1,6 +1,6 @@
 {
   "name": "sick-fits-frontend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Sick Fits! An example React, GraphQL, Next and Apollo",
   "main": "index.js",
   "scripts": {
